@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Generator</title>
+    <link rel="stylesheet" href="styl.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Generate Questions by AI</h1>
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject">
+        <label for="topic">Topic:</label>
+        <input type="text" id="topic" name="topic">
+        <label for="numQuestions">Number of Questions:</label>
+        <input type="number" id="numQuestions" name="numQuestions">
+        <button onclick="generateQuestions();">Generate Questions</button>
+        
+        <h1>Subject for Evaluation</h1>
+        <form method="post" action="" class="form-container">
+            <label>Select Subject:</label>
+            <select id="selectSubject" name="selectSubject" required>
+                <option value="">Select Subject</option>
+                <!-- Options will be populated by JavaScript -->
+            </select>
+            <button type="button" onclick="fetchAndMarkAnswers();">Evaluate Answers by Gemini AI</button>
+        </form>
+        
+        <div class="logout-button">
+            <a href="examiner_dashboard.php" class="button">Logout</a>
+        </div>
+        <div id="response"></div>
+        <div id="loadingQuestions" style="display:none;">
+            <img src="loading-questions-spinner.gif" alt="Loading...">
+        </div>
+        <div id="loadingMarking" style="display:none;">
+            <img src="loading-spinner.gif" alt="Loading...">
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch subjects for the dropdown
+            fetch('get_subjects.php')
+                .then(response => response.json())
+                .then(data => {
+                    const selectSubject = document.getElementById('selectSubject');
+                    data.subjects.forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject.subject_name;
+                        option.text = subject.subject_name;
+                        selectSubject.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching subjects:', error));
+        });
+
+        function generateQuestions() {
+            const subject = document.getElementById('subject').value;
+            const topic = document.getElementById('topic').value;
+            const numQuestions = document.getElementById('numQuestions').value;
+
+            if (!subject || !topic || !numQuestions) {
+                document.getElementById('response').innerHTML = 'Please fill in all fields.';
+                return;
+            }
+
+            const data = {
+                subject: subject,
+                topic: topic,
+                numQuestions: parseInt(numQuestions, 10)
+            };
+
+            document.getElementById('loadingQuestions').style.display = 'block';
+            document.getElementById('response').innerHTML = '';
+
+            fetch('generate_questions.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingQuestions').style.display = 'none';
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                document.getElementById('response').innerHTML = data.questions.join('<br>');
+            })
+            .catch(error => {
+                document.getElementById('loadingQuestions').style.display = 'none';
+                console.error('Error:', error);
+                document.getElementById('response').innerHTML = 'Error: ' + error.message;
+            });
+        }
+
+        function fetchAndMarkAnswers() {
+            const subjectName = document.getElementById('selectSubject').value;
+
+            if (!subjectName) {
+                document.getElementById('response').innerHTML = 'Please select a subject.';
+                return;
+            }
+
+            document.getElementById('loadingMarking').style.display = 'block';
+            document.getElementById('response').innerHTML = '';
+
+            fetch('fetch_and_mark_answers.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ subjectName: subjectName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingMarking').style.display = 'none';
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                document.getElementById('response').innerHTML = 'Answers marked successfully:<br>' + data.markedAnswers.map(answer => {
+                    return `Question: ${answer.question_text}<br>Student Answer: ${answer.student_answer}<br>Correct Answer: ${answer.correct_answer}<br>Marked Answer: ${answer.marked_answer}<br>`;
+                }).join('<br>');
+            })
+            .catch(error => {
+                document.getElementById('loadingMarking').style.display = 'none';
+                console.error('Error:', error);
+                document.getElementById('response').innerHTML = 'Error: ' + error.message;
+            });
+        }
+    </script>
+</body>
+</html>

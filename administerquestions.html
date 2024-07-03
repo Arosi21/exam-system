@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Administer Questions</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <style>
+        /* Your existing CSS styles */
+        #admin-chat {
+            width: 100%;
+            height: 300px; /* Adjust as needed */
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Questions</h1>
+    
+    <!-- Chat area for pasting questions -->
+    <div id="chat-container">
+        <textarea id="admin-chat" placeholder="Paste questions here..."></textarea>
+        <button id="upload-questions">Upload Questions</button>
+    </div>
+
+    <hr>
+
+    <!-- Individual question upload form -->
+    <form method="post" action="administer_questions.php">
+        <label>Quiz ID:</label><br>
+        <input type="number" name="quiz_id" required><br>
+        <label>Question:</label><br>
+        <textarea name="question" required></textarea><br>
+        <label>Option A:</label><br>
+        <input type="text" name="option_a" required><br>
+        <label>Option B:</label><br>
+        <input type="text" name="option_b" required><br>
+        <label>Option C:</label><br>
+        <input type="text" name="option_c" required><br>
+        <label>Option D:</label><br>
+        <input type="text" name="option_d" required><br>
+        <label>Correct Option (A/B/C/D):</label><br>
+        <input type="text" name="correct_option" maxlength="1" required><br><br>
+        <input type="submit" value="Upload Question">
+    </form>
+
+    <hr>
+    <a href="examiner_dashboard.php">Logout</a> <!-- Replace with actual logout functionality -->
+
+    <script>
+        document.getElementById('upload-questions').addEventListener('click', function() {
+            const adminChat = document.getElementById('admin-chat');
+            const questions = adminChat.value.trim();
+            const quizId = document.querySelector('input[name="quiz_id"]').value;
+
+            fetch('administer_questions.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'quiz_id=' + quizId + '&questions=' + encodeURIComponent(questions),
+            })
+            .then(response => response.text())
+            .then(data => {
+                // Display response or handle errors as needed
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
